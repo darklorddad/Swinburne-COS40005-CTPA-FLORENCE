@@ -1,81 +1,50 @@
-flowchart LR
-    %% Professional structural styling
-    classDef default fill:#ffffff,stroke:#000000,stroke-width:1px,color:#000000
-    classDef role fill:#f8f9fa,stroke:#212529,stroke-width:2px,color:#212529,font-weight:bold
-    classDef data fill:#ffffff,stroke:#6c757d,stroke-width:1px,color:#212529
-
-    %% Roles
-    Admin([Admin])
-    Clinician([Clinician])
-    Patient([Patient])
-
-    %% Data Domains
-    subgraph Global [Global Reference]
-        direction TB
-        Ref["organisations<br/>medication_dictionary<br/>dosage_frequencies"]
-    end
-
-    subgraph SystemAdmin [Admin Settings]
-        direction TB
+---
+config:
+  theme: base
+  look: neo
+---
+flowchart TB
+ subgraph Global["Global Reference"]
+    direction TB
+        Ref["organisations<br>medication_dictionary<br>dosage_frequencies"]
+  end
+ subgraph SystemAdmin["Admin Settings"]
+    direction TB
         AdminConfig["admin_profiles"]
-    end
-
-    subgraph SystemUser [User Settings]
-        direction TB
+  end
+ subgraph SystemUser["User Settings"]
+    direction TB
         UserConfig["user_settings"]
-    end
-
-    subgraph ClinicianInternal [Clinician Internal]
-        direction TB
-        ClinData["clinician_profiles<br/>clinician_notes"]
-    end
-
-    subgraph ClinicianShared [Patient Visible Thresholds]
-        direction TB
+  end
+ subgraph ClinicianInternal["Clinician Internal"]
+    direction TB
+        ClinData["clinician_profiles<br>clinician_notes"]
+  end
+ subgraph ClinicianShared["Patient Visible Thresholds"]
+    direction TB
         ThresholdData["patient_thresholds"]
-    end
-
-    subgraph CoreHealth [Shared Health Records]
-        direction TB
-        HealthData["patient_profiles<br/>patient_medications<br/>disease_logs"]
-    end
-
-    subgraph TelemetryAdmin [Telemetry & Recs]
-        direction TB
-        LogDataAdmin["daily_patient_logs<br/>patient_activity_logs<br/>medication_intake_logs<br/>patient_monitor_data<br/>patient_recommendations"]
-    end
-    
-    subgraph TelemetryPrivate [Private Patient Data]
-        direction TB
-        LogDataPrivate["clinical_documents<br/>patient_chat_history<br/>automated_actions"]
-    end
-
-    %% Admin Routing
-    Admin ===>|Manage All| SystemAdmin
-    Admin ===>|Manage All| Global
-    Admin ===>|Manage All| ClinicianInternal
-    Admin ===>|Manage All| ClinicianShared
-    Admin ===>|Manage All| CoreHealth
-    Admin ===>|Manage All| TelemetryAdmin
-
-    %% Clinician Routing
-    Clinician -.->|Read Any| Global
-    Clinician --->|Manage Own| SystemUser
-    Clinician --->|Manage Own/Assigned| ClinicianInternal
-    Clinician --->|Manage Assigned| ClinicianShared
-    Clinician --->|Manage Assigned| CoreHealth
-    Clinician -.->|Read Assigned| TelemetryAdmin
-    Clinician -.->|Read Assigned| TelemetryPrivate
-
-    %% Patient Routing
-    Patient -.->|Read Any| Global
-    Patient --->|Manage Own| SystemUser
-    Patient -.->|Read Own| ClinicianShared
-    Patient --->|Manage Own| CoreHealth
-    Patient --->|Manage Own| TelemetryAdmin
-    Patient --->|Manage Own| TelemetryPrivate
-
-    %% Layout routing (forces vertical stacking of domains)
+  end
+ subgraph CoreHealth["Shared Health Records"]
+    direction TB
+        HealthData["patient_profiles<br>patient_medications<br>disease_logs"]
+  end
+ subgraph TelemetryAdmin["Telemetry and Recommendations"]
+    direction TB
+        LogDataAdmin["daily_patient_logs<br>patient_activity_logs<br>medication_intake_logs<br>patient_monitor_data<br>patient_recommendations"]
+  end
+ subgraph TelemetryPrivate["Private Patient Data"]
+    direction TB
+        LogDataPrivate["clinical_documents<br>patient_chat_history<br>automated_actions"]
+  end
+    Admin(["Admin"]) == Manage All ===> SystemAdmin & Global & ClinicianInternal & ClinicianShared & CoreHealth & TelemetryAdmin
+    Clinician(["Clinician"]) -. Read Any .-> Global
+    Clinician -- Manage Own ---> SystemUser
+    Clinician -- Manage Own/Assigned ---> ClinicianInternal
+    Clinician -- Manage Assigned ---> ClinicianShared & CoreHealth
+    Clinician -. Read Assigned .-> TelemetryAdmin & TelemetryPrivate
+    Patient(["Patient"]) -. Read Any .-> Global
+    Patient -- Manage Own ---> SystemUser & CoreHealth & TelemetryAdmin & TelemetryPrivate
+    Patient -. Read Own .-> ClinicianShared
     Global ~~~ SystemAdmin
     SystemAdmin ~~~ SystemUser
     SystemUser ~~~ ClinicianInternal
@@ -84,6 +53,17 @@ flowchart LR
     CoreHealth ~~~ TelemetryAdmin
     TelemetryAdmin ~~~ TelemetryPrivate
 
-    %% Class Assignments
-    class Admin,Clinician,Patient role;
-    class Ref,AdminConfig,UserConfig,ClinData,ThresholdData,HealthData,LogDataAdmin,LogDataPrivate data;
+     Ref:::data
+     AdminConfig:::data
+     UserConfig:::data
+     ClinData:::data
+     ThresholdData:::data
+     HealthData:::data
+     LogDataAdmin:::data
+     LogDataPrivate:::data
+     Admin:::role
+     Clinician:::role
+     Patient:::role
+    classDef default fill:#ffffff,stroke:#000000,stroke-width:1px,color:#000000
+    classDef role fill:#f8f9fa,stroke:#212529,stroke-width:2px,color:#212529,font-weight:bold
+    classDef data fill:#ffffff,stroke:#6c757d,stroke-width:1px,color:#212529

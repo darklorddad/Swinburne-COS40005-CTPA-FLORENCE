@@ -59,7 +59,7 @@ The developer must follow these steps to set up the local environment.
 ### Nutrition Module
 The nutrition module processes meal imagery.
 
-* `POST /nutrition/analyze`: Accepts an image file of a meal. The system uses a vision model to analyse the food and estimate total calories and generate a brief description.
+* `POST /nutrition/analyze`: Accepts an image file of a meal. The system uses a vision model to analyse the food, estimate total calories and generate a brief description.
 
 ### Recommendations Module
 The recommendations module generates personalised health guidance.

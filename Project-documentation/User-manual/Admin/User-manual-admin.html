@@ -1,420 +1,87 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>User-manual-admin.md</title>
-<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
-
-<style>
-/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
-body {
-	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
-	font-size: var(--vscode-markdown-font-size, 14px);
-	padding: 0 26px;
-	line-height: var(--vscode-markdown-line-height, 22px);
-	word-wrap: break-word;
-}
-
-#code-csp-warning {
-	position: fixed;
-	top: 0;
-	right: 0;
-	color: white;
-	margin: 16px;
-	text-align: center;
-	font-size: 12px;
-	font-family: sans-serif;
-	background-color:#444444;
-	cursor: pointer;
-	padding: 6px;
-	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
-}
-
-#code-csp-warning:hover {
-	text-decoration: none;
-	background-color:#007acc;
-	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
-}
-
-body.scrollBeyondLastLine {
-	margin-bottom: calc(100vh - 22px);
-}
-
-body.showEditorSelection .code-line {
-	position: relative;
-}
-
-body.showEditorSelection .code-active-line:before,
-body.showEditorSelection .code-line:hover:before {
-	content: "";
-	display: block;
-	position: absolute;
-	top: 0;
-	left: -12px;
-	height: 100%;
-}
-
-body.showEditorSelection li.code-active-line:before,
-body.showEditorSelection li.code-line:hover:before {
-	left: -30px;
-}
-
-.vscode-light.showEditorSelection .code-active-line:before {
-	border-left: 3px solid rgba(0, 0, 0, 0.15);
-}
-
-.vscode-light.showEditorSelection .code-line:hover:before {
-	border-left: 3px solid rgba(0, 0, 0, 0.40);
-}
-
-.vscode-light.showEditorSelection .code-line .code-line:hover:before {
-	border-left: none;
-}
-
-.vscode-dark.showEditorSelection .code-active-line:before {
-	border-left: 3px solid rgba(255, 255, 255, 0.4);
-}
-
-.vscode-dark.showEditorSelection .code-line:hover:before {
-	border-left: 3px solid rgba(255, 255, 255, 0.60);
-}
-
-.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
-	border-left: none;
-}
-
-.vscode-high-contrast.showEditorSelection .code-active-line:before {
-	border-left: 3px solid rgba(255, 160, 0, 0.7);
-}
-
-.vscode-high-contrast.showEditorSelection .code-line:hover:before {
-	border-left: 3px solid rgba(255, 160, 0, 1);
-}
-
-.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
-	border-left: none;
-}
-
-img {
-	max-width: 100%;
-	max-height: 100%;
-}
-
-a {
-	text-decoration: none;
-}
-
-a:hover {
-	text-decoration: underline;
-}
-
-a:focus,
-input:focus,
-select:focus,
-textarea:focus {
-	outline: 1px solid -webkit-focus-ring-color;
-	outline-offset: -1px;
-}
-
-hr {
-	border: 0;
-	height: 2px;
-	border-bottom: 2px solid;
-}
-
-h1 {
-	padding-bottom: 0.3em;
-	line-height: 1.2;
-	border-bottom-width: 1px;
-	border-bottom-style: solid;
-}
-
-h1, h2, h3 {
-	font-weight: normal;
-}
-
-table {
-	border-collapse: collapse;
-}
-
-table > thead > tr > th {
-	text-align: left;
-	border-bottom: 1px solid;
-}
-
-table > thead > tr > th,
-table > thead > tr > td,
-table > tbody > tr > th,
-table > tbody > tr > td {
-	padding: 5px 10px;
-}
-
-table > tbody > tr + tr > td {
-	border-top: 1px solid;
-}
-
-blockquote {
-	margin: 0 7px 0 5px;
-	padding: 0 16px 0 10px;
-	border-left-width: 5px;
-	border-left-style: solid;
-}
-
-code {
-	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
-	font-size: 1em;
-	line-height: 1.357em;
-}
-
-body.wordWrap pre {
-	white-space: pre-wrap;
-}
-
-pre:not(.hljs),
-pre.hljs code > div {
-	padding: 16px;
-	border-radius: 3px;
-	overflow: auto;
-}
-
-pre code {
-	color: var(--vscode-editor-foreground);
-	tab-size: 4;
-}
-
-/** Theming */
-
-.vscode-light pre {
-	background-color: rgba(220, 220, 220, 0.4);
-}
-
-.vscode-dark pre {
-	background-color: rgba(10, 10, 10, 0.4);
-}
-
-.vscode-high-contrast pre {
-	background-color: rgb(0, 0, 0);
-}
-
-.vscode-high-contrast h1 {
-	border-color: rgb(0, 0, 0);
-}
-
-.vscode-light table > thead > tr > th {
-	border-color: rgba(0, 0, 0, 0.69);
-}
-
-.vscode-dark table > thead > tr > th {
-	border-color: rgba(255, 255, 255, 0.69);
-}
-
-.vscode-light h1,
-.vscode-light hr,
-.vscode-light table > tbody > tr + tr > td {
-	border-color: rgba(0, 0, 0, 0.18);
-}
-
-.vscode-dark h1,
-.vscode-dark hr,
-.vscode-dark table > tbody > tr + tr > td {
-	border-color: rgba(255, 255, 255, 0.18);
-}
-
-</style>
-
-<style>
-/* Tomorrow Theme */
-/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
-/* Original theme - https://github.com/chriskempson/tomorrow-theme */
-
-/* Tomorrow Comment */
-.hljs-comment,
-.hljs-quote {
-	color: #8e908c;
-}
-
-/* Tomorrow Red */
-.hljs-variable,
-.hljs-template-variable,
-.hljs-tag,
-.hljs-name,
-.hljs-selector-id,
-.hljs-selector-class,
-.hljs-regexp,
-.hljs-deletion {
-	color: #c82829;
-}
-
-/* Tomorrow Orange */
-.hljs-number,
-.hljs-built_in,
-.hljs-builtin-name,
-.hljs-literal,
-.hljs-type,
-.hljs-params,
-.hljs-meta,
-.hljs-link {
-	color: #f5871f;
-}
-
-/* Tomorrow Yellow */
-.hljs-attribute {
-	color: #eab700;
-}
-
-/* Tomorrow Green */
-.hljs-string,
-.hljs-symbol,
-.hljs-bullet,
-.hljs-addition {
-	color: #718c00;
-}
-
-/* Tomorrow Blue */
-.hljs-title,
-.hljs-section {
-	color: #4271ae;
-}
-
-/* Tomorrow Purple */
-.hljs-keyword,
-.hljs-selector-tag {
-	color: #8959a8;
-}
-
-.hljs {
-	display: block;
-	overflow-x: auto;
-	color: #4d4d4c;
-	padding: 0.5em;
-}
-
-.hljs-emphasis {
-	font-style: italic;
-}
-
-.hljs-strong {
-	font-weight: bold;
-}
-</style>
-
-<style>
-/*
- * Markdown PDF CSS
- */
-
- body {
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
-	padding: 0 12px;
-}
-
-pre {
-	background-color: #f8f8f8;
-	border: 1px solid #cccccc;
-	border-radius: 3px;
-	overflow-x: auto;
-	white-space: pre-wrap;
-	overflow-wrap: break-word;
-}
-
-pre:not(.hljs) {
-	padding: 23px;
-	line-height: 19px;
-}
-
-blockquote {
-	background: rgba(127, 127, 127, 0.1);
-	border-color: rgba(0, 122, 204, 0.5);
-}
-
-.emoji {
-	height: 1.4em;
-}
-
-code {
-	font-size: 14px;
-	line-height: 19px;
-}
-
-/* for inline code */
-:not(pre):not(.hljs) > code {
-	color: #C9AE75; /* Change the old color so it seems less like an error */
-	font-size: inherit;
-}
-
-/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
--------------------------------------------------------- */
-.page {
-	page-break-after: always;
-}
-
-</style>
-
-<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-</head>
-<body>
-  <script>
-    mermaid.initialize({
-      startOnLoad: true,
-      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
-          ? 'dark'
-          : 'default'
-    });
-  </script>
-<h1 id="florence-admin-portal-user-manual">Florence: Admin Portal User Manual</h1>
-<h2 id="1-purpose-and-scope">1. Purpose and Scope</h2>
-<p>This manual explains how administrators use the Florence Admin Portal to manage patients, clinicians, healthcare organisations, clinical risk oversight, and synthetic clinical test data.</p>
-<p>The manual focuses only on implemented admin-side functionality found in the Florence codebase:</p>
+<!DOCTYPE html><html><head>
+      <title>User-manual-admin</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+      <link rel="stylesheet" href="file:////home/dld/.vscode/extensions/shd101wyy.markdown-preview-enhanced-0.8.30/crossnote/dependencies/katex/katex.min.css">
+      
+      
+      
+      
+      
+      
+      
+      <style>
+      code[class*=language-],pre[class*=language-]{color:#333;background:0 0;font-family:Consolas,"Liberation Mono",Menlo,Courier,monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.4;-moz-tab-size:8;-o-tab-size:8;tab-size:8;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*=language-]{padding:.8em;overflow:auto;border-radius:3px;background:#f5f5f5}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal;background:#f5f5f5}.token.blockquote,.token.comment{color:#969896}.token.cdata{color:#183691}.token.doctype,.token.macro.property,.token.punctuation,.token.variable{color:#333}.token.builtin,.token.important,.token.keyword,.token.operator,.token.rule{color:#a71d5d}.token.attr-value,.token.regex,.token.string,.token.url{color:#183691}.token.atrule,.token.boolean,.token.code,.token.command,.token.constant,.token.entity,.token.number,.token.property,.token.symbol{color:#0086b3}.token.prolog,.token.selector,.token.tag{color:#63a35c}.token.attr-name,.token.class,.token.class-name,.token.function,.token.id,.token.namespace,.token.pseudo-class,.token.pseudo-element,.token.url-reference .token.variable{color:#795da3}.token.entity{cursor:help}.token.title,.token.title .token.punctuation{font-weight:700;color:#1d3e81}.token.list{color:#ed6a43}.token.inserted{background-color:#eaffea;color:#55a532}.token.deleted{background-color:#ffecec;color:#bd2c00}.token.bold{font-weight:700}.token.italic{font-style:italic}.language-json .token.property{color:#183691}.language-markup .token.tag .token.punctuation{color:#333}.language-css .token.function,code.language-css{color:#0086b3}.language-yaml .token.atrule{color:#63a35c}code.language-yaml{color:#183691}.language-ruby .token.function{color:#333}.language-markdown .token.url{color:#795da3}.language-makefile .token.symbol{color:#795da3}.language-makefile .token.variable{color:#183691}.language-makefile .token.builtin{color:#0086b3}.language-bash .token.keyword{color:#0086b3}pre[data-line]{position:relative;padding:1em 0 1em 3em}pre[data-line] .line-highlight-wrapper{position:absolute;top:0;left:0;background-color:transparent;display:block;width:100%}pre[data-line] .line-highlight{position:absolute;left:0;right:0;padding:inherit 0;margin-top:1em;background:hsla(24,20%,50%,.08);background:linear-gradient(to right,hsla(24,20%,50%,.1) 70%,hsla(24,20%,50%,0));pointer-events:none;line-height:inherit;white-space:pre}pre[data-line] .line-highlight:before,pre[data-line] .line-highlight[data-end]:after{content:attr(data-start);position:absolute;top:.4em;left:.6em;min-width:1em;padding:0 .5em;background-color:hsla(24,20%,50%,.4);color:#f4f1ef;font:bold 65%/1.5 sans-serif;text-align:center;vertical-align:.3em;border-radius:999px;text-shadow:none;box-shadow:0 1px #fff}pre[data-line] .line-highlight[data-end]:after{content:attr(data-end);top:auto;bottom:.4em}html body{font-family:'Helvetica Neue',Helvetica,'Segoe UI',Arial,freesans,sans-serif;font-size:16px;line-height:1.6;color:#333;background-color:#fff;overflow:initial;box-sizing:border-box;word-wrap:break-word}html body>:first-child{margin-top:0}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{line-height:1.2;margin-top:1em;margin-bottom:16px;color:#000}html body h1{font-size:2.25em;font-weight:300;padding-bottom:.3em}html body h2{font-size:1.75em;font-weight:400;padding-bottom:.3em}html body h3{font-size:1.5em;font-weight:500}html body h4{font-size:1.25em;font-weight:600}html body h5{font-size:1.1em;font-weight:600}html body h6{font-size:1em;font-weight:600}html body h1,html body h2,html body h3,html body h4,html body h5{font-weight:600}html body h5{font-size:1em}html body h6{color:#5c5c5c}html body strong{color:#000}html body del{color:#5c5c5c}html body a:not([href]){color:inherit;text-decoration:none}html body a{color:#08c;text-decoration:none}html body a:hover{color:#00a3f5;text-decoration:none}html body img{max-width:100%}html body>p{margin-top:0;margin-bottom:16px;word-wrap:break-word}html body>ol,html body>ul{margin-bottom:16px}html body ol,html body ul{padding-left:2em}html body ol.no-list,html body ul.no-list{padding:0;list-style-type:none}html body ol ol,html body ol ul,html body ul ol,html body ul ul{margin-top:0;margin-bottom:0}html body li{margin-bottom:0}html body li.task-list-item{list-style:none}html body li>p{margin-top:0;margin-bottom:0}html body .task-list-item-checkbox{margin:0 .2em .25em -1.8em;vertical-align:middle}html body .task-list-item-checkbox:hover{cursor:pointer}html body blockquote{margin:16px 0;font-size:inherit;padding:0 15px;color:#5c5c5c;background-color:#f0f0f0;border-left:4px solid #d6d6d6}html body blockquote>:first-child{margin-top:0}html body blockquote>:last-child{margin-bottom:0}html body hr{height:4px;margin:32px 0;background-color:#d6d6d6;border:0 none}html body table{margin:10px 0 15px 0;border-collapse:collapse;border-spacing:0;display:block;width:100%;overflow:auto;word-break:normal;word-break:keep-all}html body table th{font-weight:700;color:#000}html body table td,html body table th{border:1px solid #d6d6d6;padding:6px 13px}html body dl{padding:0}html body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:700}html body dl dd{padding:0 16px;margin-bottom:16px}html body code{font-family:Menlo,Monaco,Consolas,'Courier New',monospace;font-size:.85em;color:#000;background-color:#f0f0f0;border-radius:3px;padding:.2em 0}html body code::after,html body code::before{letter-spacing:-.2em;content:'\00a0'}html body pre>code{padding:0;margin:0;word-break:normal;white-space:pre;background:0 0;border:0}html body .highlight{margin-bottom:16px}html body .highlight pre,html body pre{padding:1em;overflow:auto;line-height:1.45;border:#d6d6d6;border-radius:3px}html body .highlight pre{margin-bottom:0;word-break:normal}html body pre code,html body pre tt{display:inline;max-width:initial;padding:0;margin:0;overflow:initial;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}html body pre code:after,html body pre code:before,html body pre tt:after,html body pre tt:before{content:normal}html body blockquote,html body dl,html body ol,html body p,html body pre,html body ul{margin-top:0;margin-bottom:16px}html body kbd{color:#000;border:1px solid #d6d6d6;border-bottom:2px solid #c7c7c7;padding:2px 4px;background-color:#f0f0f0;border-radius:3px}@media print{html body{background-color:#fff}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{color:#000;page-break-after:avoid}html body blockquote{color:#5c5c5c}html body pre{page-break-inside:avoid}html body table{display:table}html body img{display:block;max-width:100%;max-height:100%}html body code,html body pre{word-wrap:break-word;white-space:pre}}.markdown-preview{width:100%;height:100%;box-sizing:border-box}.markdown-preview ul{list-style:disc}.markdown-preview ul ul{list-style:circle}.markdown-preview ul ul ul{list-style:square}.markdown-preview ol{list-style:decimal}.markdown-preview ol ol,.markdown-preview ul ol{list-style-type:lower-roman}.markdown-preview ol ol ol,.markdown-preview ol ul ol,.markdown-preview ul ol ol,.markdown-preview ul ul ol{list-style-type:lower-alpha}.markdown-preview .newpage,.markdown-preview .pagebreak{page-break-before:always}.markdown-preview pre.line-numbers{position:relative;padding-left:3.8em;counter-reset:linenumber}.markdown-preview pre.line-numbers>code{position:relative}.markdown-preview pre.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:1em;font-size:100%;left:0;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.markdown-preview pre.line-numbers .line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.markdown-preview pre.line-numbers .line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}.markdown-preview .mathjax-exps .MathJax_Display{text-align:center!important}.markdown-preview:not([data-for=preview]) .code-chunk .code-chunk-btn-group{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .status{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .output-div{margin-bottom:16px}.markdown-preview .md-toc{padding:0}.markdown-preview .md-toc .md-toc-details{margin:0;padding:0;border:none}.markdown-preview .md-toc summary.md-toc-link-wrapper{cursor:pointer;list-style-position:outside}.markdown-preview .md-toc summary.md-toc-link-wrapper::marker{font-size:.85em}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link div,.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}.markdown-preview .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='0']{margin-left:12px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='1']{margin-left:28px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='2']{margin-left:44px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='3']{margin-left:60px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='4']{margin-left:76px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='5']{margin-left:80px}.markdown-preview a.tag,.markdown-preview a.tag:active,.markdown-preview a.tag:link,.markdown-preview a.tag:visited,.markdown-preview span.tag:not(.token){display:inline-block;background-color:var(--vscode-badge-background,rgba(127,127,127,.18));color:var(--vscode-badge-foreground,currentColor);border-radius:2em;font-size:.85em;font-weight:500;padding:.05em .55em;line-height:1.5;white-space:nowrap;text-decoration:none;text-shadow:none;box-shadow:none;transition:background-color .12s ease,opacity .12s ease}.markdown-preview a.tag{cursor:pointer}.markdown-preview a.tag:focus,.markdown-preview a.tag:hover{background-color:var(--vscode-badge-background,rgba(127,127,127,.32));color:var(--vscode-badge-foreground,currentColor);opacity:.85;text-decoration:none;outline:0}.markdown-preview .wikilink-embed-content{border-left:3px solid var(--vscode-textBlockQuote-border,rgba(128,128,128,.3));background:var(--vscode-textBlockQuote-background,rgba(128,128,128,.05));margin:.5em 0;padding:.5em .75em;border-radius:0 3px 3px 0}.markdown-preview .wikilink-embed-content.wikilink-embed-error{border-left-color:var(--vscode-errorForeground,#cf222e);color:var(--vscode-errorForeground,#cf222e);font-style:italic;opacity:.8}.markdown-preview .wikilink-embed-content h1:first-child,.markdown-preview .wikilink-embed-content h2:first-child,.markdown-preview .wikilink-embed-content h3:first-child,.markdown-preview .wikilink-embed-content h4:first-child,.markdown-preview .wikilink-embed-content h5:first-child,.markdown-preview .wikilink-embed-content h6:first-child{margin-top:.25em}.markdown-preview .wikilink-embed-content .wikilink-embed-content{margin:.25em 0;padding:.25em .5em}.markdown-preview .block-id{display:none}.scrollbar-style::-webkit-scrollbar{width:8px}.scrollbar-style::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}.scrollbar-style::-webkit-scrollbar-thumb{border-radius:5px;background-color:var(--vscode-scrollbarSlider-background,rgba(150,150,150,.66));border:4px solid var(--vscode-scrollbarSlider-background,rgba(150,150,150,.66));background-clip:content-box}.scrollbar-style::-webkit-scrollbar-thumb:hover{background-color:var(--vscode-scrollbarSlider-hoverBackground,rgba(120,120,120,.66))}html body[for=html-export]:not([data-presentation-mode]){position:relative;width:100%;height:100%;top:0;left:0;margin:0;padding:0;overflow:auto}html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{position:relative;top:0;min-height:100vh}@media screen and (min-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em calc(50% - 457px + 2em)}}@media screen and (max-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{font-size:14px!important;padding:1em}}@media print{html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{display:none}}html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{position:fixed;bottom:8px;left:8px;font-size:28px;cursor:pointer;color:inherit;z-index:99;width:32px;text-align:center;opacity:.4}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] #sidebar-toc-btn{opacity:1}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc{position:fixed;top:0;left:0;width:300px;height:100%;padding:32px 0 48px 0;font-size:14px;box-shadow:0 0 4px rgba(150,150,150,.33);box-sizing:border-box;overflow:auto;background-color:inherit}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar{width:8px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb{border-radius:5px;background-color:var(--vscode-scrollbarSlider-background,rgba(150,150,150,.66));border:4px solid var(--vscode-scrollbarSlider-background,rgba(150,150,150,.66));background-clip:content-box}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb:hover{background-color:var(--vscode-scrollbarSlider-hoverBackground,rgba(120,120,120,.66))}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc a{text-decoration:none}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc{padding:0 16px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-details{margin:0;padding:0;border:none}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link div,html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='0']{padding-left:0}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='1']{padding-left:16px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='2']{padding-left:32px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='3']{padding-left:48px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='4']{padding-left:64px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='5']{padding-left:80px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{left:300px;width:calc(100% - 300px);padding:2em calc(50% - 457px - 300px / 2);margin:0;box-sizing:border-box}@media screen and (max-width:1274px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{width:100%}}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .markdown-preview{left:50%;transform:translateX(-50%)}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .md-sidebar-toc{display:none}
+/* Please visit the URL below for more information: */
+/*   https://shd101wyy.github.io/markdown-preview-enhanced/#/customize-css */
+
+      </style>
+      <!-- The content below will be included at the end of the <head> element. -->
+<script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function () {
+    // your code here
+  });
+</script>
+    </head>
+    <body for="html-export">
+      <div class="crossnote markdown-preview  ">
+      
+<h1 id="florence-user-manual---admin-portal">Florence: User Manual - Admin Portal </h1>
+<hr>
+<h2 id="1-purpose-and-scope">1. Purpose and Scope </h2>
+<p>This manual explains how administrators use the Florence Admin Portal to manage patients, clinicians, healthcare organisations, clinical risk oversight and synthetic clinical test data.</p>
+<p>The manual focuses only on implemented admin-side functionality:</p>
 <ul>
 <li>Admin authentication and logout.</li>
-<li>Dashboard metrics, action feed, quick actions, and recent activity.</li>
-<li>Patient registration, search, filtering, profile editing, risk-level override, clinician assignment, and data/account management.</li>
-<li>Clinician registration, search, organisation filtering, editing, and deletion.</li>
-<li>Organisation search, filtering, creation, editing, and detail viewing.</li>
+<li>Dashboard metrics, action feed, quick actions and recent activity.</li>
+<li>Patient registration, search, filtering, profile editing, risk-level override, clinician assignment and data/account management.</li>
+<li>Clinician registration, search, organisation filtering, editing and deletion.</li>
+<li>Organisation search, filtering, creation, editing and detail viewing.</li>
 <li>LLM Data Simulator for creating synthetic patient accounts and test health records.</li>
 </ul>
-<h2 id="2-access-requirements">2. Access Requirements</h2>
-<p>The Admin Portal is intended for authorised administrative users. Admin API endpoints are protected by the backend admin authentication dependency, and the frontend uses an admin login screen before routing users into the admin dashboard.</p>
+<hr>
+<h2 id="2-access-requirements">2. Access Requirements </h2>
+<p>The Admin Portal is intended for authorised administrative users.</p>
 <p>Administrators should have:</p>
 <ol>
 <li>An authorised admin email address.</li>
 <li>A valid password.</li>
-<li>Permission to manage operational records such as patients, clinicians, and organisations.</li>
+<li>Permission to manage operational records such as patients, clinicians and organisations.</li>
 </ol>
-<p>Important: Some admin actions are destructive. Wiping health data, deleting a patient account, and deleting a clinician should only be performed after confirming the target record is correct.</p>
-<h2 id="3-admin-portal-layout">3. Admin Portal Layout</h2>
+<blockquote>
+<p>Important: Some admin actions are destructive. Wiping health data, deleting a patient account and deleting a clinician should only be performed after confirming the target record is correct.</p>
+</blockquote>
+<hr>
+<h2 id="3-admin-portal-layout">3. Admin Portal Layout </h2>
 <p>Most admin screens use a two-column layout:</p>
 <ul>
-<li><strong>Left sidebar:</strong> Persistent navigation for Dashboard, Patients, Clinicians, Organizations, Data Simulator, Settings, and Logout.</li>
-<li><strong>Main workspace:</strong> The selected admin page, including tables, filters, forms, and action dialogs.</li>
+<li><strong>Left sidebar:</strong> Persistent navigation for Dashboard, Patients, Clinicians, Organisations, Data Simulator, Settings and Logout.</li>
+<li><strong>Main workspace:</strong> The selected admin page, including tables, filters, forms and action dialogs.</li>
 <li><strong>Profile area:</strong> The bottom of the sidebar shows the admin profile card and logout icon.</li>
 </ul>
 <p><img src="admin-main-screen.png" alt="Admin main screen"></p>
-<h2 id="4-logging-in">4. Logging In</h2>
+<hr>
+<h2 id="4-logging-in">4. Logging In </h2>
 <ol>
 <li>Open the Florence login page.</li>
 <li>Enter the authorised administrator email address.</li>
 <li>Enter the administrator password.</li>
-<li>Select <strong>Sign In</strong>.</li>
+<li>Select <em>Sign In</em>.</li>
 <li>After successful authentication, the system redirects to the Admin Dashboard.</li>
 </ol>
 <p><img src="admin-login-screen.png" alt="Admin login screen"></p>
-<h3 id="logging-out">Logging Out</h3>
+<h3 id="logging-out">Logging Out </h3>
 <ol>
 <li>Locate the profile card at the bottom of the left sidebar.</li>
 <li>Select the logout icon.</li>
-<li>The system clears the admin authentication state, signs out from Supabase, and returns the user to the login flow.</li>
+<li>The system clears the admin authentication state, signs out and returns the user to the login flow.</li>
 </ol>
-<p align="center">
-  <img src="admin-logout.png" alt="Admin logout" height="500">
-</p>
-<h2 id="5-admin-dashboard">5. Admin Dashboard</h2>
-<p>The Admin Dashboard is the main operational overview for administrators. It summarises system status, clinical alerts, and recent administrative risk updates.</p>
-<h3 id="51-dashboard-header-and-search">5.1 Dashboard Header and Search</h3>
+<p><img src="admin-logout.png" alt="alt text"></p>
+<hr>
+<h2 id="5-admin-dashboard">5. Admin Dashboard </h2>
+<p>The Admin Dashboard is the main operational overview for administrators. It summarises system status, clinical alerts and recent administrative risk updates.</p>
+<h3 id="51-dashboard-header-and-search">5.1. Dashboard Header and Search </h3>
 <p>The dashboard header displays a greeting and a search field.</p>
 <p>The search field filters dashboard attention items by:</p>
 <ul>
@@ -423,18 +90,18 @@ code {
 <li>Patient ID.</li>
 </ul>
 <p><img src="admin-dashboard-header.png" alt="Admin dashboard header"></p>
-<h3 id="52-kpi-dashboard">5.2 KPI Dashboard</h3>
+<h3 id="52-kpi-dashboard">5.2. KPI Dashboard </h3>
 <p>The KPI cards display live metrics derived from the patient list.</p>
 <p><img src="KPI-dashboard.png" alt="KPI dashboard"></p>
 <p>Cards shown:</p>
 <ul>
-<li><strong>Total Patients:</strong> Number of patient profiles returned by the admin patient API.</li>
+<li><strong>Total Patients:</strong> Number of patient profiles.</li>
 <li><strong>High-Risk Patients:</strong> Number of patients with risk level set to HIGH.</li>
 <li><strong>Hypoglycemia:</strong> Number of patients with a recent low-glucose alert.</li>
 <li><strong>Hyperglycemia:</strong> Number of patients with a recent high-glucose alert.</li>
 </ul>
 <p>Glucose alert logic is based on recent glucose readings and patient-specific glucose thresholds when available. If patient thresholds are unavailable, the system falls back to default glucose limits.</p>
-<h3 id="53-action-required-feed">5.3 Action Required Feed</h3>
+<h3 id="53-action-required-feed">5.3. Action Required Feed </h3>
 <p>The Action Required Feed lists patients requiring attention. A patient appears in this feed when they are:</p>
 <ul>
 <li>Marked as HIGH risk.</li>
@@ -445,15 +112,15 @@ code {
 <p>Each feed item displays:</p>
 <ul>
 <li>Patient initial and name.</li>
-<li>Assigned clinician or <strong>Unassigned</strong>.</li>
+<li>Assigned clinician or <em>Unassigned</em>.</li>
 <li>Current risk badge.</li>
 </ul>
 <p>To view all patients:</p>
 <ol>
-<li>Select <strong>View All</strong> in the Action Required Feed header.</li>
+<li>Select <em>View All</em> in the Action Required Feed header.</li>
 <li>The system navigates to the Patient Directory.</li>
 </ol>
-<h3 id="54-quick-actions">5.4 Quick Actions</h3>
+<h3 id="54-quick-actions">5.4. Quick Actions </h3>
 <p>The Quick Actions panel provides shortcuts for common workflows.</p>
 <p><img src="quick-actions.png" alt="Quick actions"></p>
 <p>Current quick actions:</p>
@@ -461,63 +128,62 @@ code {
 <li><strong>Register Patient:</strong> Opens the Register New Patient dialog.</li>
 <li><strong>Data Simulator:</strong> Opens the LLM Data Simulator page.</li>
 </ul>
-<h3 id="55-recent-activity">5.5 Recent Activity</h3>
+<h3 id="55-recent-activity">5.5. Recent Activity </h3>
 <p>The Recent Activity panel shows recent system activities generated from patient risk assessment updates.</p>
 <p>Activity items may show:</p>
 <ul>
-<li><strong>Risk Level Elevated</strong> when a patient is updated to HIGH risk.</li>
-<li><strong>Risk Assessment Updated</strong> when a patient's risk level changes.</li>
+<li><em>Risk Level Elevated</em> when a patient is updated to HIGH risk.</li>
+<li><em>Risk Assessment Updated</em> when a patient's risk level changes.</li>
 <li>Relative time since the event.</li>
 </ul>
 <p><img src="recent-activity.png" alt="Recent activity"></p>
-<h2 id="6-patient-management">6. Patient Management</h2>
-<p>The Patient Directory allows administrators to register patients, search patients, filter by risk, open patient details, update patient records, assign clinicians, generate test data, and perform controlled data removal.</p>
-<h3 id="61-opening-the-patient-directory">6.1 Opening the Patient Directory</h3>
+<hr>
+<h2 id="6-patient-management">6. Patient Management </h2>
+<p>The Patient Directory allows administrators to register patients, search patients, filter by risk, open patient details, update patient records, assign clinicians, generate test data and perform controlled data removal.</p>
+<h3 id="61-opening-the-patient-directory">6.1. Opening the Patient Directory </h3>
 <ol>
-<li>Select <strong>Patients</strong> in the left sidebar.</li>
+<li>Select <em>Patients</em> in the left sidebar.</li>
 <li>The Patient Directory opens.</li>
 </ol>
 <p><img src="patient-directory.png" alt="Patient directory"></p>
 <p>The table displays:</p>
 <ul>
-<li>Patient ID.</li>
-<li>Name.</li>
-<li>Assigned clinician.</li>
-<li>Risk level.</li>
-<li>Last assessment.</li>
-<li>Action icon.</li>
+<li>Patient ID</li>
+<li>Name</li>
+<li>Assigned Clinician</li>
+<li>Risk Level</li>
+<li>Last Assessment</li>
+<li>Action icon (pencil)</li>
 </ul>
-<h3 id="62-searching-and-filtering-patients">6.2 Searching and Filtering Patients</h3>
+<h3 id="62-searching-and-filtering-patients">6.2. Searching and Filtering Patients </h3>
 <ol>
-<li>Enter a patient name or ID into <strong>Search by name or ID...</strong>.</li>
-<li>Select a risk filter from <strong>All Risk Levels</strong>, <strong>Low Risk</strong>, <strong>Medium Risk</strong>, or <strong>High Risk</strong>.</li>
+<li>Enter a patient name or ID into <em>Search by name or ID...</em></li>
+<li>Select a risk filter from <em>All Risk Levels</em>, <em>Low Risk</em>, <em>Medium Risk</em> or <em>High Risk</em>.</li>
 <li>The table updates to show matching records.</li>
 </ol>
 <p><img src="detailed-patient-directory.png" alt="Detailed patient directory"></p>
-<h3 id="63-registering-a-new-patient">6.3 Registering a New Patient</h3>
+<h3 id="63-registering-a-new-patient">6.3. Registering a New Patient </h3>
 <p>A patient can be registered from either:</p>
 <ul>
-<li>The Dashboard <strong>Register Patient</strong> quick action.</li>
-<li>The Patient Directory <strong>Register New Patient</strong> button.</li>
+<li>The Dashboard <em>Register Patient</em> quick action.</li>
+<li>The Patient Directory <em>Register New Patient</em> button.</li>
 </ul>
 <p>Steps:</p>
 <ol>
-<li>Select <strong>Register Patient</strong> or <strong>Register New Patient</strong>.</li>
+<li>Select <em>Register Patient</em> or <em>Register New Patient</em>.</li>
 <li>Enter the patient's full name.</li>
 <li>Enter the patient's email address.</li>
 <li>Enter a phone number if available.</li>
 <li>Select gender.</li>
 <li>Review or replace the temporary password.</li>
-<li>Select <strong>Register Patient</strong>.</li>
+<li>Select <em>Register Patient</em>.</li>
 </ol>
-<p>The system registers the account through the authentication API with the PATIENT role and refreshes the patient list.</p>
-<p align="center">
-  <img src="register-patient.png" alt="Register patient" height="300">
-</p>
-<h3 id="64-opening-patient-details">6.4 Opening Patient Details</h3>
+<p>The system registers the account and refreshes the patient list.</p>
+<p><img src="register-patient.png" alt="alt text"></p>
+<h3 id="64-opening-patient-details">6.4. Opening Patient Details </h3>
 <ol>
 <li>In the Patient Directory, locate the patient.</li>
-<li>Select the pencil/edit icon in the <strong>Actions</strong> column.</li>
+<li>Select the edit icon (pencil) in the <em>Actions</em> column.</li>
 <li>The Patient Detail screen opens.</li>
 </ol>
 <p><img src="edit-patient-detail.png" alt="Edit patient detail"></p>
@@ -530,279 +196,280 @@ code {
 <li>Data Management actions.</li>
 </ul>
 <p><img src="patient-details.png" alt="Patient detail"></p>
-<h3 id="65-editing-patient-profile-details">6.5 Editing Patient Profile Details</h3>
+<h3 id="65-editing-patient-profile-details">6.5. Editing Patient Profile Details </h3>
 <ol>
 <li>Open the Patient Detail screen.</li>
-<li>Select the edit icon in the <strong>General Information</strong> section.</li>
+<li>Select the edit icon (pencil) in the <em>General Information</em> section.</li>
 <li>Update editable fields:
 <ul>
-<li>Full Name.</li>
-<li>Phone Number.</li>
-<li>Date of Birth in <code>YYYY-MM-DD</code> format.</li>
-<li>Gender.</li>
-<li>Organisation.</li>
-<li>Emergency Contact Name.</li>
-<li>Emergency Contact Relationship.</li>
-<li>Emergency Contact Phone.</li>
+<li>Full Name</li>
+<li>Phone Number</li>
+<li>Date of Birth in <code>YYYY-MM-DD</code> format</li>
+<li>Gender</li>
+<li>Organisation</li>
+<li>Emergency Contact Name</li>
+<li>Emergency Contact Relationship</li>
+<li>Emergency Contact Phone</li>
 </ul>
 </li>
-<li>Select <strong>Save Changes</strong>.</li>
+<li>Select <em>Save Changes</em>.</li>
 </ol>
-<p>The updated patient details are saved to the backend and the patient list is refreshed.</p>
-<p align="center">
-  <img src="edit-patient-profile.png" alt="Edit patient profile" height="300">
-</p>
-<h3 id="66-updating-a-patient-risk-level">6.6 Updating a Patient Risk Level</h3>
+<p>The updated patient details are saved and the patient list is refreshed.</p>
+<p><img src="edit-patient-profile.png" alt="alt text"></p>
+<h3 id="66-updating-a-patient-risk-level">6.6. Updating a Patient Risk Level </h3>
 <p>Administrators can manually override the oversight risk level.</p>
 <ol>
 <li>Open the Patient Detail screen.</li>
-<li>In the <strong>Admin Oversight</strong> card, locate <strong>Oversight Risk Level</strong>.</li>
+<li>In the <em>Admin Oversight</em> card, locate <em>Oversight Risk Level</em>.</li>
 <li>Select one of:
 <ul>
-<li><strong>Low Risk</strong>.</li>
-<li><strong>Medium Risk</strong>.</li>
-<li><strong>High Risk (Action Required)</strong>.</li>
+<li><em>Low Risk</em></li>
+<li><em>Medium Risk</em></li>
+<li><em>High Risk (Action Required)</em>*</li>
 </ul>
 </li>
 <li>The system saves the new risk level and updates the last risk assessment timestamp.</li>
 </ol>
 <p><img src="change-risk-level.png" alt="Change risk level"></p>
-<p>After the update succeeds, the updated risk level is reflected in the detail screen, patient table, KPI counts, action feed, and recent activity feed.</p>
+<p>After the update succeeds, the updated risk level is reflected in the detail screen, patient table, KPI counts, action feed and recent activity feed.</p>
 <p><img src="updated-risk-level.png" alt="Updated risk level"></p>
-<h3 id="67-assigning-a-clinician-to-a-patient">6.7 Assigning a Clinician to a Patient</h3>
+<h3 id="67-assigning-a-clinician-to-a-patient">6.7. Assigning a Clinician to a Patient </h3>
 <ol>
 <li>Open the Patient Detail screen.</li>
-<li>In the <strong>Admin Oversight</strong> card, locate <strong>Assigned Clinician</strong>.</li>
-<li>Enter the target clinician's numeric clinician ID in <strong>Enter Clinician ID</strong>.</li>
-<li>Select <strong>Assign</strong>.</li>
+<li>In the <em>Admin Oversight</em> card, locate <em>Assigned Clinician</em>.</li>
+<li>Enter the target clinician's numeric clinician ID in <em>Enter Clinician ID</em>.</li>
+<li>Select <em>Assign</em>.</li>
 <li>The patient list refreshes and the patient returns to the directory view.</li>
 </ol>
-<p align="center">
-  <img src="assign-clinician.png" alt="Assign clinician" height="300">
-</p>  
+<p><img src="assign-clinician.png" alt="alt text"></p>
+<blockquote>
 <p>Important: The current UI expects the clinician's numeric database ID. Use the Clinician Directory to confirm the clinician ID before assigning.</p>
-<h3 id="68-unassigning-a-clinician">6.8 Unassigning a Clinician</h3>
+</blockquote>
+<h3 id="68-unassigning-a-clinician">6.8. Unassigning a Clinician </h3>
 <ol>
 <li>Open the Patient Detail screen for a patient with an assigned clinician.</li>
-<li>In the <strong>Assigned Clinician</strong> area, select <strong>Unassign</strong>.</li>
+<li>In the <em>Assigned Clinician</em> area, select <em>Unassign</em>.</li>
 <li>The system clears the patient's clinician assignment.</li>
 </ol>
-<p align="center">
-  <img src="unassign-clinician.png" alt="Unassign clinician" height="300">
-</p>
-<h3 id="69-generating-simulated-data-for-an-existing-patient">6.9 Generating Simulated Data for an Existing Patient</h3>
+<p><img src="unassign-clinician.png" alt="alt text"></p>
+<h3 id="69-generating-simulated-data-for-an-existing-patient">6.9. Generating Simulated Data for an Existing Patient </h3>
 <p>The Patient Detail screen can generate 30 days of simulated health data for an existing patient.</p>
 <ol>
 <li>Open the Patient Detail screen.</li>
-<li>In <strong>Data Management</strong>, select <strong>Generate Simulated Data (LLM)</strong>.</li>
+<li>In <em>Data Management</em>, select <em>Generate Simulated Data (LLM)</em>.</li>
 <li>Choose a clinical scenario:
 <ul>
-<li>The Perfect Patient.</li>
-<li>The Rollercoaster.</li>
-<li>Dawn Phenomenon.</li>
-<li>High-Carb Sedentary.</li>
+<li>The Perfect Patient</li>
+<li>The Rollercoaster</li>
+<li>Dawn Phenomenon</li>
+<li>High-Carb Sedentary</li>
 </ul>
 </li>
-<li>Select <strong>Generate</strong>.</li>
+<li>Select <em>Generate</em>.</li>
 <li>Wait for generation to complete.</li>
 </ol>
-<p>The backend inserts simulated monitor data, daily meal logs, activity logs, long-term vitals, medication/adherence data, and updates the patient's risk level based on the selected scenario.</p>
+<p>The backend inserts simulated monitor data, daily meal logs, activity logs, long-term vitals, medication/adherence data and updates the patient's risk level based on the selected scenario.</p>
 <p><img src="generate-simulated-data.png" alt="Generate simulated data"></p>
-<h3 id="610-wiping-patient-health-data-while-keeping-the-account">6.10 Wiping Patient Health Data While Keeping the Account</h3>
+<h3 id="610-wiping-patient-health-data-while-keeping-the-account">6.10. Wiping Patient Health Data While Keeping the Account </h3>
 <p>This action deletes patient health records while keeping the patient's account and demographic profile.</p>
 <ol>
 <li>Open the Patient Detail screen.</li>
-<li>In <strong>Data Management</strong>, select <strong>Wipe Health Data (Keep Account)</strong>.</li>
+<li>In <em>Data Management</em>, select <em>Wipe Health Data (Keep Account)</em>.</li>
 <li>Read the confirmation dialog.</li>
-<li>Select <strong>Wipe Data</strong> only if the target patient is correct.</li>
+<li>Select <em>Wipe Data</em> only if the target patient is correct.</li>
 </ol>
-<p>This removes health logs, activity records, monitor data, recommendations, chat history, clinical documents, and medication intake logs. It also resets selected AI/risk state fields.</p>
+<p>This removes health logs, activity records, monitor data, recommendations, chat history, clinical documents and medication intake logs. It also resets selected AI/risk state fields.</p>
 <p><img src="wipe-health-data-keep.png" alt="Wipe health data"></p>
-<h3 id="611-wiping-patient-data-and-account">6.11 Wiping Patient Data and Account</h3>
-<p>This action permanently deletes the patient profile and attempts to delete the linked Supabase Auth user.</p>
+<h3 id="611-wiping-patient-data-and-account">6.11. Wiping Patient Data and Account </h3>
+<p>This action permanently deletes the patient profile.</p>
 <ol>
 <li>Open the Patient Detail screen.</li>
-<li>In <strong>Data Management</strong>, select <strong>Wipe Patient Data &amp; Account</strong>.</li>
+<li>In <em>Data Management</em>, select <em>Wipe Patient Data &amp; Account</em>.</li>
 <li>Read the confirmation dialog.</li>
-<li>Select <strong>Delete Permanently</strong> only if the target account should be removed.</li>
+<li>Select <em>Delete Permanently</em> only if the target account should be removed.</li>
 </ol>
+<blockquote>
 <p>Warning: This action cannot be undone from the Admin Portal.</p>
+</blockquote>
 <p><img src="wipe-health-data-account.png" alt="Wipe health data and account"></p>
-<h2 id="7-clinician-management">7. Clinician Management</h2>
-<p>The Clinician Directory allows administrators to register clinicians, search clinicians, filter by organisation, edit clinician details, and delete clinician accounts.</p>
-<h3 id="71-opening-the-clinician-directory">7.1 Opening the Clinician Directory</h3>
+<hr>
+<h2 id="7-clinician-management">7. Clinician Management </h2>
+<p>The Clinician Directory allows administrators to register clinicians, search clinicians, filter by organisation, edit clinician details and delete clinician accounts.</p>
+<h3 id="71-opening-the-clinician-directory">7.1. Opening the Clinician Directory </h3>
 <ol>
-<li>Select <strong>Clinicians</strong> in the left sidebar.</li>
+<li>Select <em>Clinicians</em> in the left sidebar.</li>
 <li>The Clinician Directory opens.</li>
 </ol>
 <p>The table displays:</p>
 <ul>
-<li>Clinician ID.</li>
-<li>Name.</li>
-<li>Phone.</li>
-<li>Organisation.</li>
-<li>Assigned Patients.</li>
-<li>Actions.</li>
+<li>Clinician ID</li>
+<li>Name</li>
+<li>Phone</li>
+<li>Organisation</li>
+<li>Assigned Patients</li>
+<li>Actions</li>
 </ul>
 <p><img src="clinician-dashboard.png" alt="Clinician dashboard"></p>
-<h3 id="72-searching-and-filtering-clinicians">7.2 Searching and Filtering Clinicians</h3>
+<h3 id="72-searching-and-filtering-clinicians">7.2. Searching and Filtering Clinicians </h3>
 <ol>
-<li>Enter a clinician name or ID in <strong>Search by name or ID...</strong>.</li>
+<li>Enter a clinician name or ID in <em>Search by name or ID...</em></li>
 <li>Select an organisation from the organisation dropdown.</li>
 <li>The clinician table updates to show matching records.</li>
 </ol>
 <p><img src="search-n-filter-clinicians.png" alt="Search and Filter Clinicians"></p>
-<h3 id="73-registering-a-new-clinician">7.3 Registering a New Clinician</h3>
+<h3 id="73-registering-a-new-clinician">7.3. Registering a New Clinician </h3>
 <ol>
-<li>Select <strong>Register New Clinician</strong>.</li>
+<li>Select <em>Register New Clinician</em>.</li>
 <li>Enter the clinician's full name.</li>
 <li>Enter the clinician's email address.</li>
 <li>Enter a phone number if available.</li>
 <li>Select gender.</li>
 <li>Select an organisation. This is required.</li>
 <li>Review or replace the temporary password.</li>
-<li>Select <strong>Register Clinician</strong>.</li>
+<li>Select <em>Register Clinician</em>.</li>
 </ol>
-<p>The system registers the account through the authentication API with the CLINICIAN role and refreshes the clinician list.</p>
+<p>The system registers the account and refreshes the clinician list.</p>
 <p><img src="register-clinician.png" alt="Register clinician"></p>
-<h3 id="74-editing-a-clinician">7.4 Editing a Clinician</h3>
+<h3 id="74-editing-a-clinician">7.4. Editing a Clinician </h3>
 <ol>
-<li>In the Clinician Directory, select the edit icon for a clinician.</li>
+<li>In the Clinician Directory, select the edit icon (pencil) for a clinician.</li>
 <li>Update editable fields:
 <ul>
-<li>Name.</li>
-<li>Phone Number.</li>
-<li>Gender.</li>
-<li>Organisation.</li>
+<li>Name</li>
+<li>Phone Number</li>
+<li>Gender</li>
+<li>Organisation</li>
 </ul>
 </li>
-<li>Select <strong>Save</strong>.</li>
+<li>Select <em>Save</em>.</li>
 </ol>
 <p><img src="edit-clinician.png" alt="Edit clinician"></p>
-<h3 id="75-deleting-a-clinician">7.5 Deleting a Clinician</h3>
+<h3 id="75-deleting-a-clinician">7.5. Deleting a Clinician </h3>
 <ol>
 <li>In the Clinician Directory, select the delete icon for a clinician.</li>
 <li>Read the confirmation dialog.</li>
-<li>Select <strong>Delete</strong> only if the clinician account should be removed.</li>
+<li>Select <em>Delete</em> only if the clinician account should be removed.</li>
 </ol>
-<p>When a clinician is deleted, assigned patients are first unassigned to avoid broken assignments. The clinician profile is then deleted and the system attempts to delete the linked auth user.</p>
+<p>When a clinician is deleted, assigned patients are first unassigned to avoid broken assignments. The clinician profile is then deleted.</p>
 <p><img src="delete-clinician.png" alt="Delete clinician"></p>
-<h2 id="8-organisation-management">8. Organisation Management</h2>
-<p>The Organizations module manages healthcare facilities, clinics, hospitals, health centres, labs, and other organisations.</p>
-<h3 id="81-opening-the-organizations-directory">8.1 Opening the Organizations Directory</h3>
+<hr>
+<h2 id="8-organisation-management">8. Organisation Management </h2>
+<p>The Organisations module manages healthcare facilities, clinics, hospitals, health centres, labs and other organisations.</p>
+<h3 id="81-opening-the-organisations-directory">8.1. Opening the Organisations Directory </h3>
 <ol>
-<li>Select <strong>Organizations</strong> in the left sidebar.</li>
+<li>Select <em>Organizations</em> in the left sidebar.</li>
 <li>The Organizations directory opens.</li>
 </ol>
 <p><img src="organisations.png" alt="Organizations directory"></p>
 <p>The table displays:</p>
 <ul>
-<li>Organisation name.</li>
-<li>Sector.</li>
-<li>Facility type.</li>
-<li>State.</li>
-<li>Patient count.</li>
-<li>Clinician count.</li>
-<li>Actions.</li>
+<li>Organisation name</li>
+<li>Sector</li>
+<li>Facility type</li>
+<li>State</li>
+<li>Patient count</li>
+<li>Clinician count</li>
+<li>Actions</li>
 </ul>
-<h3 id="82-searching-and-filtering-organisations">8.2 Searching and Filtering Organisations</h3>
+<h3 id="82-searching-and-filtering-organisations">8.2. Searching and Filtering Organisations </h3>
 <ol>
-<li>Enter text into <strong>Search by name, email, or state...</strong>.</li>
+<li>Enter text into <em>Search by name, email, or state...</em></li>
 <li>Select a sector filter:
 <ul>
-<li>All.</li>
-<li>Public.</li>
-<li>Private.</li>
-<li>NGO.</li>
-<li>Other.</li>
+<li>All</li>
+<li>Public</li>
+<li>Private</li>
+<li>NGO</li>
+<li>Other</li>
 </ul>
 </li>
 <li>Select a facility type filter:
 <ul>
-<li>All.</li>
-<li>Hospital.</li>
-<li>Clinic.</li>
-<li>Health Centre.</li>
-<li>Lab.</li>
-<li>Other.</li>
+<li>All</li>
+<li>Hospital</li>
+<li>Clinic</li>
+<li>Health Centre</li>
+<li>Lab</li>
+<li>Other</li>
 </ul>
 </li>
 <li>The table updates to show matching organisations.</li>
 </ol>
 <p><img src="organisation-filters.png" alt="Organizations filters"></p>
-<h3 id="83-viewing-organisation-details">8.3 Viewing Organisation Details</h3>
+<h3 id="83-viewing-organisation-details">8.3. Viewing Organisation Details </h3>
 <ol>
 <li>In the Organizations directory, locate the organisation.</li>
-<li>Select the eye/view icon.</li>
-<li>Review the Organisation Detail screen.</li>
+<li>Select the view icon (eye).</li>
+<li>Review the Organization Detail screen.</li>
 </ol>
 <p><img src="facility-details.png" alt="Facility details"></p>
 <p>The detail screen includes:</p>
 <ul>
 <li>Facility Details:
 <ul>
-<li>Sector.</li>
-<li>Type.</li>
-<li>State.</li>
-<li>Address.</li>
-<li>Phone.</li>
-<li>Email.</li>
-<li>Website.</li>
-<li>Hours.</li>
+<li>Sector</li>
+<li>Type</li>
+<li>State</li>
+<li>Address</li>
+<li>Phone</li>
+<li>Email</li>
+<li>Website</li>
+<li>Hours</li>
 </ul>
 </li>
 <li>System Usage:
 <ul>
-<li>Patient count.</li>
-<li>Clinician count.</li>
+<li>Patient count</li>
+<li>Clinician count</li>
 </ul>
 </li>
-<li><strong>Edit Organization</strong> button.</li>
+<li><em>Edit Organization</em> button.</li>
 </ul>
-<h3 id="84-creating-a-new-organisation">8.4 Creating a New Organisation</h3>
+<h3 id="84-creating-a-new-organisation">8.4. Creating a New Organisation </h3>
 <ol>
-<li>Select <strong>Add Organization</strong>.</li>
-<li>Enter <strong>Organization Name</strong>. This is required.</li>
+<li>Select <em>Add Organization</em>.</li>
+<li>Enter <em>Organization Name</em>. This is required.</li>
 <li>Enter optional contact details:
 <ul>
-<li>Email.</li>
-<li>Phone Number.</li>
-<li>Website.</li>
+<li>Email</li>
+<li>Phone Number</li>
+<li>Website</li>
 </ul>
 </li>
 <li>Select sector.</li>
 <li>Select facility type.</li>
 <li>Enter full address.</li>
 <li>Enter state or province.</li>
-<li>Enable <strong>24 Hours Operation</strong> if applicable.</li>
+<li>Enable <em>24 Hours Operation</em> if applicable.</li>
 <li>If the organisation is not 24 hours, enter operating hours.</li>
-<li>Select <strong>Save Changes</strong>.</li>
+<li>Select <em>Save Changes</em>.</li>
 </ol>
 <p><img src="add-organisation.png" alt="Add organisation"></p>
-<h3 id="85-editing-an-organisation">8.5 Editing an Organisation</h3>
+<h3 id="85-editing-an-organisation">8.5. Editing an Organisation </h3>
 <p>An organisation can be edited from:</p>
 <ul>
-<li>The edit icon in the Organizations directory.</li>
-<li>The <strong>Edit Organization</strong> button in the Organisation Detail screen.</li>
+<li>The edit icon (pencil) in the Organizations directory.</li>
+<li>The <em>Edit Organization</em> button in the Organization Detail screen.</li>
 </ul>
 <p>Steps:</p>
 <ol>
 <li>Open the edit dialog.</li>
 <li>Update the organisation details.</li>
-<li>Select <strong>Save Changes</strong>.</li>
+<li>Select <em>Save Changes</em>.</li>
 <li>The organisation list refreshes.</li>
 </ol>
 <p><img src="edit-organisation.png" alt="Edit organisation"></p>
-<h2 id="9-llm-data-simulator">9. LLM Data Simulator</h2>
+<hr>
+<h2 id="9-llm-data-simulator">9. LLM Data Simulator </h2>
 <p>The LLM Data Simulator creates a synthetic patient account and generates 30 days of simulated clinical data.</p>
-<p>This tool is intended for testing, demonstration, and validation scenarios. It should not be used to create real patient records.</p>
-<h3 id="91-opening-the-data-simulator">9.1 Opening the Data Simulator</h3>
+<p>This tool is intended for testing, demonstration and validation scenarios. It should not be used to create real patient records.</p>
+<h3 id="91-opening-the-data-simulator">9.1. Opening the Data Simulator </h3>
 <ol>
-<li>Select <strong>Data Simulator</strong> in the left sidebar, or select <strong>Data Simulator</strong> from the Dashboard Quick Actions panel.</li>
+<li>Select <em>Data Simulator</em> in the left sidebar or select <em>Data Simulator</em> from the Dashboard Quick Actions panel.</li>
 <li>The LLM Data Simulator page opens.</li>
 </ol>
-<p><img src="Data-simulator.png" alt="Data simulator"></p>
-<h3 id="92-generating-a-synthetic-patient">9.2 Generating a Synthetic Patient</h3>
+<p><img src="data-simulator.png" alt="Data simulator"></p>
+<h3 id="92-generating-a-synthetic-patient">9.2. Generating a Synthetic Patient </h3>
 <ol>
 <li>Enter a patient name.</li>
 <li>Enter a unique email address.</li>
@@ -815,41 +482,43 @@ code {
 <li><strong>High-Carb Sedentary:</strong> Post-meal spikes and no activity.</li>
 </ul>
 </li>
-<li>Select <strong>Generate Patient (30 Days)</strong>.</li>
+<li>Select <em>Generate Patient (30 Days)</em>.</li>
 <li>Wait for the LLM generation process to finish.</li>
 </ol>
 <p>The simulator:</p>
 <ul>
 <li>Creates a patient auth user.</li>
 <li>Creates a patient profile.</li>
-<li>Inserts default glucose, blood pressure, and related thresholds.</li>
-<li>Inserts 30 days of simulated monitor data, meal logs, activity logs, long-term vitals, medication data, and medication intake logs.</li>
+<li>Inserts default glucose, blood pressure and related thresholds.</li>
+<li>Inserts 30 days of simulated monitor data, meal logs, activity logs, long-term vitals, medication data and medication intake logs.</li>
 <li>Assigns a HIGH risk level for selected high-risk scenarios, otherwise LOW.</li>
 <li>Refreshes the patient list.</li>
 </ul>
 <p>Generation may take up to approximately 45 seconds because it calls the LLM engine.</p>
 <p><img src="orchestrating.png" alt="Orchestrating data"></p>
-<h2 id="10-common-error-and-empty-states">10. Common Error and Empty States</h2>
-<p>The admin UI displays feedback using table empty states, loading indicators, dialogs, and snackbar messages.</p>
+<hr>
+<h2 id="10-common-error-and-empty-states">10. Common Error and Empty States </h2>
+<p>The admin UI displays feedback using table empty states, loading indicators, dialogs and snackbar messages.</p>
 <p>Common states:</p>
 <ul>
 <li>
-<p><strong>No patients found matching your criteria:</strong> Search or risk filter has no matching patients.
-<img src="no-patients-found.png" alt="No patients found"></p>
+<p><strong>No patients found matching your criteria:</strong> Search or risk filter has no matching patients.</p>
+<p><img src="no-patients-found.png" alt="No patients found"></p>
 </li>
 <li>
-<p><strong>No clinicians found matching your criteria:</strong> Search or organisation filter has no matching clinicians.
-<img src="no-clinicians-found.png" alt="No clinicians found"></p>
+<p><strong>No clinicians found matching your criteria:</strong> Search or organisation filter has no matching clinicians.</p>
+<p><img src="no-clinicians-found.png" alt="No clinicians found"></p>
 </li>
 <li>
-<p><strong>No organizations found matching your criteria:</strong> Search, sector, or facility type filter has no matching organisations.
-<img src="no-orgs-found.png" alt="No organisations found"></p>
+<p><strong>No organizations found matching your criteria:</strong> Search, sector or facility type filter has no matching organisations.</p>
+<p><img src="no-orgs-found.png" alt="No organisations found"></p>
 </li>
 </ul>
-<h2 id="12-safety-checklist-for-administrators">12. Safety Checklist for Administrators</h2>
+<hr>
+<h2 id="11-safety-checklist-for-administrators">11. Safety Checklist for Administrators </h2>
 <p>Before changing operational records:</p>
 <ol>
-<li>Confirm the correct patient, clinician, or organisation is selected.</li>
+<li>Confirm the correct patient, clinician or organisation is selected.</li>
 <li>For patient risk changes, verify the clinical reason for the override.</li>
 <li>Before assigning a clinician, confirm the clinician ID in the Clinician Directory.</li>
 <li>Before wiping health data, confirm that preserving the account but deleting health records is the intended action.</li>
@@ -857,6 +526,45 @@ code {
 <li>Before deleting a clinician, confirm that their assigned patients can safely become unassigned.</li>
 <li>Use the LLM Data Simulator only for synthetic test accounts, not real patient data.</li>
 </ol>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Funnel+Display&display=swap');
 
-</body>
-</html>
+    .markdown-preview {
+        font-family: 'Funnel Display', sans-serif;
+        text-align: justify;
+    }
+
+    .markdown-preview h1,
+    .markdown-preview h2,
+    .markdown-preview h3,
+    .markdown-preview h4,
+    .markdown-preview h5,
+    .markdown-preview h6 {
+        text-align: left; 
+    }
+
+    img {
+        display: block;
+        margin: 0 auto;
+        max-height: 11cm !important;
+    }
+
+    @media print {
+        hr {
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+    }
+</style>
+
+      </div>
+      
+      
+    
+    
+    
+    
+    
+    
+  
+    </body></html>

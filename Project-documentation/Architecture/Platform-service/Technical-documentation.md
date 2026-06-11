@@ -54,9 +54,9 @@ The repository contains modular directories that segregate the frontend function
 ## Security and Privacy
 The platform enforces a strict zero-trust security model by delegating authentication, authorisation and data encryption in transit to the infrastructure layer. 
 
-* **Authentication & Session Management**: The application utilises Supabase Auth for secure user authentication, deep link resolution and session persistence. Password hashing and credential storage are handled entirely by the Supabase infrastructure.
+* **Authentication and Session Management**: The application utilises Supabase Auth for secure user authentication, deep link resolution and session persistence. Password hashing and credential storage are handled entirely by the Supabase infrastructure.
 * **Data Protection**: All clinical data operations route through a custom singleton `ApiService` that intercepts HTTP requests to append the active JSON Web Token (JWT) to the authorisation header. Data privacy and row-level access control are strictly enforced at the database layer via Supabase Row Level Security (RLS) policies, ensuring users can only access their own health records.
-* **Administrative Access Control**: The administrative portal enforces strict Role-Based Access Control (RBAC) directly within the routing logic and widget trees. The system maps Supabase authentication metadata to internal `AdminRole` enumerators (e.g., Global Administrator, Hospital Administrator). The frontend utilises a custom `PermissionGuard` widget that intercepts rendering pipelines, hiding sensitive UI elements and blocking unauthorised navigation if the active user lacks specific `AdminPermission` claims.
+* **Administrative Access Control**: The administrative portal enforces strict Role-Based Access Control (RBAC) directly within the routing logic and widget trees. The system maps Supabase authentication metadata to internal `AdminRole` enumerators (e.g. Global Administrator, Hospital Administrator). The frontend utilises a custom `PermissionGuard` widget that intercepts rendering pipelines, hiding sensitive UI elements and blocking unauthorised navigation if the active user lacks specific `AdminPermission` claims.
 
 ---
 
@@ -81,7 +81,7 @@ The developer must follow these steps to prepare the local environment.
 The `ApiService` class operates as a singleton wrapper around the standard HTTP client. It automatically evaluates the active Supabase authentication session to inject Bearer tokens into outgoing request headers. The service maps specific uniform resource identifiers to backend targets, processes multipart file requests for image uploads and intercepts HTTP 401 responses to trigger seamless token refreshes.
 
 ### Pattern Detection Engine
-The `PatternDetectionService` evaluates the `HealthDataState` payload locally to identify clinical anomalies immediately after data entry. It is actively utilised by the local automation manager (`NotificationNotifier`) to trigger real-time UI alerts and persist clinical audit trails to the backend. The engine applies deterministic rules to evaluate the latest glucose readings against dynamic user-defined thresholds, detect prolonged physical inactivity (no activity logged in 48 hours) and flag high-carbohydrate meals (exceeding 80 grams). It outputs `DetectedPattern` objects mapped to severity scales to drive the notification system.
+The `PatternDetectionService` evaluates the `HealthDataState` payload locally to identify clinical anomalies immediately after data entry. It is actively utilised by the local automation manager (`NotificationNotifier`) to trigger real-time UI alerts and persist clinical audit trails to the backend. The engine applies deterministic rules to evaluate the latest glucose readings against dynamic user-defined thresholds and detect prolonged physical inactivity (no activity logged in 48 hours). It outputs `DetectedPattern` objects mapped to severity scales to drive the notification system.
 
 ### Notification and Automation Handlers
 The `NotificationNotifier` class persists a local array of `HealthNotification` objects. It listens to state transitions in the health data providers to dispatch alerts automatically. If the pattern detection engine identifies a critical event such as a hypertensive crisis or severe hypoglycaemia, the service instantly triggers a high-priority alert prompting the user to seek medical attention. The system transmits automated action records to the backend to maintain a verifiable clinical audit trail.
@@ -135,8 +135,6 @@ The application bypasses standard widgets to render complex clinical visualisati
 * **Body Mass Index Indicator**: The system plots dynamic bounds across a linear track, calculating fractional offsets to place the patient marker accurately within underweight, normal, overweight or obese zones.
 * **Scatter Matrices**: The blood pressure analytics screen utilises `ScatterChart` implementations to plot systolic values against diastolic values, mapping standard deviation clusters against clinical danger zones.
 * **Traffic Light Calendar**: The dietary impact view renders a twenty-eight day grid, calculating post-prandial glucose spikes to colour individual date cells green, yellow or red.
-
----
 
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Funnel+Display&display=swap');

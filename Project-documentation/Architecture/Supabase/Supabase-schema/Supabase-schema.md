@@ -1,3 +1,7 @@
+# Florence: Architecture - Supabase Schema
+
+---
+
 ## Table `admin_profiles`
 
 ### Columns

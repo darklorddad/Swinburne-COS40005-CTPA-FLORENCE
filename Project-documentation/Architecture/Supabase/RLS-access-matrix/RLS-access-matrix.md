@@ -1,4 +1,4 @@
-# Detailed Row Level Security Access Matrix
+# Florence: Architecture - Row Level Security (RLS) Access Matrix
 
 The following document details the database access matrix based on the established Row Level Security policies. Access levels are categorised by operations (All for create, read, update and delete; Read for select; Update for update; None for no access) and their scopes (Own, Assigned or Global).
 
@@ -19,8 +19,8 @@ The following document details the database access matrix based on the establish
 | :--- | :--- | :--- | :--- |
 | **User and Profile Management** | | | |
 | `admin_profiles` | All | None | None |
-| `clinician_profiles` | All | Read / Update (Own) | None |
-| `patient_profiles` | All | Read / Update (Assigned) | Read / Update (Own) |
+| `clinician_profiles` | All | Read/Update (Own) | None |
+| `patient_profiles` | All | Read/Update (Assigned) | Read/Update (Own) |
 | `user_settings` | All (Own) | All (Own) | All (Own) |
 | **Dictionaries and Global Data** | | | |
 | `organisations` | All | Read (Global) | Read (Global) |
@@ -31,7 +31,7 @@ The following document details the database access matrix based on the establish
 | `disease_logs` | All | All (Assigned) | All (Own) |
 | `patient_thresholds` | All | All (Assigned) | Read (Own) |
 | `clinical_documents` | None | Read (Assigned) | All (Own) |
-| `clinician_notes` | All | Read / Delete (Own), Create (Assigned)* | None |
+| `clinician_notes` | All | Read/Delete (Own), Create (Assigned)* | None |
 | `patient_recommendations` | All | Read (Assigned) | All (Own) |
 | `automated_actions` | None | Read (Assigned) | All (Own) |
 | **Patient Logs and Monitoring** | | | |
@@ -41,7 +41,7 @@ The following document details the database access matrix based on the establish
 | `patient_activity_logs` | All | Read (Assigned) | All (Own) |
 | `patient_chat_history` | None | Read (Assigned) | All (Own) |
 
-*\*Note: Clinician note updates require both Own and Assigned scopes to be true simultaneously.*
+> *Note: Clinician note updates require both Own and Assigned scopes to be true simultaneously.*
 
 ---
 
