@@ -58,7 +58,7 @@
 <td style="text-align:left">Backend, Frontend</td>
 </tr>
 <tr>
-<td style="text-align:left"><code>SUPABASE_SERVICE_ROLE_KEY</code></td>
+<td style="text-align:left"><code>SUPABASE_SERVICE_KEY</code></td>
 <td style="text-align:left">Bypasses RLS for admin background tasks</td>
 <td style="text-align:left">Vercel Environment Variables</td>
 <td style="text-align:left">Backend Microservices</td>
@@ -83,7 +83,7 @@
 <ul>
 <li><strong>Patients:</strong> Can only read, insert, update and delete their own health data, logs and chat history. This is enforced by joining the target table with <code>patient_profiles</code> and verifying the <code>auth.uid()</code>.</li>
 <li><strong>Clinicians:</strong> Can only view and manage data for patients explicitly assigned to them. Policies join <code>patient_profiles</code> with <code>clinician_profiles</code> to verify that the <code>clinician_id</code> matches the authenticated user.</li>
-<li><strong>Administrators:</strong> Global admins possess full access across all tables to manage the platform, users and organisations.</li>
+<li><strong>Administrators:</strong> Global admins possess full access across almost all tables to manage the platform, users and organisations. However, to enforce strict patient privacy, administrators are explicitly denied RLS access to highly sensitive private data, specifically <code>patient_chat_history</code>, <code>clinical_documents</code> and <code>automated_actions</code>.</li>
 <li><strong>Role Verification:</strong> A secure PostgreSQL function <code>get_user_role()</code> reads the <code>role</code> claim from the Supabase JWT <code>app_metadata</code> to determine user permissions dynamically.</li>
 </ul>
 <h3 id="database-functions-and-triggers">Database Functions and Triggers </h3>
@@ -91,15 +91,17 @@
 <ul>
 <li><code>create_patient_with_profile_and_thresholds</code>: Automatically generates a patient profile and seeds default clinical thresholds (glucose, HbA1c, BMI and blood pressure) upon registration.</li>
 <li><code>create_clinician_with_profile</code>: Provisions a new clinician and links them to an organisation.</li>
-<li><code>handle_new_user_settings</code>: A trigger that automatically creates a <code>user_settings</code> row (defaulting to mmol/L) when a new user signs up.</li>
+<li><code>handle_new_user_settings</code>: A function that automatically creates a <code>user_settings</code> row (defaulting to mmol/L) when a new user signs up. <em>Trigger Binding:</em> Executed <code>AFTER INSERT</code> on the <code>auth.users</code> table via the <code>on_auth_user_created</code> trigger.</li>
 <li><code>delete_clinician_and_clean_up</code>: Safely removes a clinician, unassigns their patients and anonymises their name in existing clinical notes before deleting the underlying auth user.</li>
+<li><code>get_all_table_names</code>: A utility function that returns a list of all ordinary tables within the <code>public</code> schema.</li>
+<li><code>get_user_role</code>: A utility function that extracts the user's role from the JWT <code>app_metadata</code> to support dynamic permission checks.</li>
 </ul>
 <h3 id="storage-buckets">Storage Buckets </h3>
 <p>Supabase Storage is utilised for managing user-generated and clinical files.</p>
 <ul>
-<li><code>avatars</code>: Stores patient and clinician profile pictures.</li>
-<li><code>meal_photos</code>: Stores images of food for AI nutritional analysis.</li>
-<li><code>clinical_documents</code>: Stores uploaded PDFs or images of lab reports for biometric parsing.</li>
+<li><code>Bucket</code>: Stores patient and clinician profile pictures. RLS policies enforce that users can only upload, view, and update files within their own <code>Profile_Picture/{auth.uid()}/</code> directory.</li>
+<li><code>meal_photos</code>: Intended to store images of food for AI nutritional analysis. <em>(Note: This bucket currently lacks explicit RLS policies in the provisioned schema dump and may require manual configuration via the Supabase dashboard to secure uploads).</em></li>
+<li><code>clinical-documents</code>: Stores uploaded PDFs or images of lab reports for biometric parsing. RLS policies restrict access to folders matching the authenticated user's UUID.</li>
 </ul>
 <hr>
 <h2 id="4-billing-limits-and-day-2-operations">4. Billing, Limits and Day 2 Operations </h2>

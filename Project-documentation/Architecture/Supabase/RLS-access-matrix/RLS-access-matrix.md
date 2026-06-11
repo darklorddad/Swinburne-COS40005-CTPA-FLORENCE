@@ -43,7 +43,7 @@ The following document details the database access matrix based on the establish
 | **Storage Buckets (Files)** | | | |
 | `Bucket` (Profile Pictures) | None | None | All (Own via auth.uid) |
 | `clinical-documents` | None | Read (Assigned) | All (Own via auth.uid) |
-| `meal_photos` | None | None | None (Pending RLS) |
+| `meal_photos` | None | None | None |
 
 > *Note: Clinician note updates require both Own and Assigned scopes to be true simultaneously.*
 
