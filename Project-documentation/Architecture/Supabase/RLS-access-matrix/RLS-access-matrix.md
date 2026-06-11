@@ -40,6 +40,10 @@ The following document details the database access matrix based on the establish
 | `patient_monitor_data` | All | Read (Assigned) | All (Own) |
 | `patient_activity_logs` | All | Read (Assigned) | All (Own) |
 | `patient_chat_history` | None | Read (Assigned) | All (Own) |
+| **Storage Buckets (Files)** | | | |
+| `Bucket` (Profile Pictures) | None | None | All (Own via auth.uid) |
+| `clinical-documents` | None | Read (Assigned) | All (Own via auth.uid) |
+| `meal_photos` | None | None | None (Pending RLS) |
 
 > *Note: Clinician note updates require both Own and Assigned scopes to be true simultaneously.*
 
