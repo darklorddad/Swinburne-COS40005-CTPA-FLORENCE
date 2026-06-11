@@ -52,10 +52,7 @@ The repository contains modular directories that segregate the frontend function
 ---
 
 ## Security and Privacy
-The platform implements dedicated services to process sensitive clinical information securely.
-
-* **Encryption Service**: The system implements SHA-256 hashing algorithms with dynamic salting to secure local password evaluations. It provides Base64 encoding pathways designed to integrate with future advanced encryption standard algorithms.
-* **Data Anonymisation**: The application features a dedicated anonymisation class that utilises regular expressions to detect and mask personally identifiable information. The system obscures names, email addresses, phone numbers and identification strings to produce safe analytical datasets.
+The platform relies on Supabase Row Level Security (RLS) and backend API middleware to enforce data privacy and access control. The repository includes scaffolded utility classes (`EncryptionService` and `DataAnonymizationService`) containing RegEx masking and SHA-256 hashing logic. These are currently reserved as proof-of-concept modules for future edge-computing or offline-mode data sanitisation, while active PII protection is strictly enforced at the infrastructure and database layers.
 
 ---
 
@@ -80,7 +77,7 @@ The developer must follow these steps to prepare the local environment.
 The `ApiService` class operates as a singleton wrapper around the standard HTTP client. It automatically evaluates the active Supabase authentication session to inject Bearer tokens into outgoing request headers. The service maps specific uniform resource identifiers to backend targets, processes multipart file requests for image uploads and intercepts HTTP 401 responses to trigger seamless token refreshes.
 
 ### Pattern Detection Engine
-The `PatternDetectionService` evaluates the `HealthDataState` payload locally to identify clinical anomalies immediately after data entry. It applies deterministic rules to detect glucose spikes exceeding 50 milligrams per decilitre, prolonged physical inactivity or consecutive high carbohydrate meals. The engine outputs `DetectedPattern` objects mapped to severity scales.
+The `PatternDetectionService` evaluates the `HealthDataState` payload locally to identify clinical anomalies immediately after data entry. It applies deterministic rules to evaluate the latest glucose readings against dynamic user-defined thresholds, detect prolonged physical inactivity (no activity logged in 48 hours) and flag high carbohydrate meals (exceeding 80 grams). The engine outputs `DetectedPattern` objects mapped to severity scales.
 
 ### Notification and Automation Handlers
 The `NotificationNotifier` class persists a local array of `HealthNotification` objects. It listens to state transitions in the health data providers to dispatch alerts automatically. If the pattern detection engine identifies a critical event such as a hypertensive crisis or severe hypoglycaemia, the service instantly triggers a high-priority alert prompting the user to seek medical attention. The system transmits automated action records to the backend to maintain a verifiable clinical audit trail.
@@ -143,7 +140,7 @@ The application bypasses standard widgets to render complex clinical visualisati
 The administrative system enforces strict role-based access control directly within the routing logic and widget trees. The system maps the Supabase authentication metadata to internal `AdminRole` enumerators. Global administrators possess full database access while hospital administrators inherit an `organization_id` bound to all subsequent queries. The frontend utilises a custom `PermissionGuard` widget that intercepts rendering pipelines, hiding sensitive elements if the active user lacks specific `AdminPermission` claims.
 
 ### Client-Side Encryption and Data Masking
-The application includes a `DataAnonymizationService` designed to sanitise datasets locally before aggregation operations. The class utilises regular expression replacement to mask patient names, truncate email addresses and obscure phone numbers. This ensures that any statistical views generated for administrative oversight do not expose protected health information inadvertently.
+The application includes scaffolded utility classes such as `DataAnonymizationService` and `EncryptionService` designed to sanitise datasets locally and encode sensitive fields. These classes utilise regular expression replacement and SHA-256 hashing algorithms. However, these modules currently serve as proof-of-concept implementations reserved for future offline-processing or edge-computing features. In the current production architecture, active data masking, encryption in transit, and PII protection are strictly enforced at the infrastructure level via Supabase Auth, Row Level Security (RLS), and HTTPS API communication.
 
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Funnel+Display&display=swap');
